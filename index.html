@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>وشلي - منصة الدعاء التفاعلية</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      text-align: center;
+      padding: 30px;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>✍️ أكتب أمنيتك</h2>
+    <input id="wishInput" placeholder="مثلاً: ربي اجعلني مستجاب الدعاء">
+    <button onclick="saveWish()">أنشئ الرابط (يحفظ تلقائياً)</button>
+  </div>
+
+  <div class="card" id="wishCard" style="display:none;">
+    <h3>🌟 أمنيتك:</h3>
+    <p id="wishDisplay"></p>
+
+    <textarea id="replyInput" placeholder="أرسل دعاء لدعم هذه الأمنية..."></textarea>
+    <button onclick="sendReply()">إرسال الدعاء</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8sPGq3LAVItUDL4Ga7faI2XxlgNwQzBg",
+      authDomain: "wishly-5fec3.firebaseapp.com",
+      projectId: "wishly-5fec3",
+      storageBucket: "wishly-5fec3.appspot.com",
+      messagingSenderId: "335219699587",
+      appId: "1:335219699587:web:36789b44ea704ca94a50b6",
+      measurementId: "G-FF6H5WLLB3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Functions
+    async function saveWish() {
+      const wish = document.getElementById('wishInput').value;
+      const id = Date.now().toString();
+      const docRef = doc(db, "wishes", id);
+      await setDoc(docRef, {
+        wish: wish,
+        replies: []
+      });
+      document.getElementById('wishDisplay').innerText = wish;
+      document.getElementById('wishCard').style.display = 'block';
+      window.history.pushState({}, '', `?id=${id}`);
+    }
+
+    async function sendReply() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      const reply = document.getElementById('replyInput').value;
+      const docRef = doc(db, "wishes", id);
+      await updateDoc(docRef, {
+        replies: arrayUnion(reply)
+      });
+      alert("🌸 تم إرسال الدعاء. جزاك الله خيرًا");
+      document.getElementById('replyInput').value = "";
+    }
+
+    // Load wish if ID exists
+    window.onload = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      if (id) {
+        const docRef = doc(db, "wishes", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          document.getElementById('wishDisplay').innerText = docSnap.data().wish;
+          document.getElementById('wishCard').style.display = 'block';
+        }
+      }
+    };
+  </script>
+</body>
+</html>
